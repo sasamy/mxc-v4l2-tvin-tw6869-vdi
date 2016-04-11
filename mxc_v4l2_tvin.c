@@ -361,12 +361,9 @@ int prepare_display_buffers(void)
 int v4l_capture_setup(void)
 {
 	struct v4l2_capability cap;
-	struct v4l2_cropcap cropcap;
-	struct v4l2_crop crop;
 	struct v4l2_format fmt;
 	struct v4l2_requestbuffers req;
-	struct v4l2_streamparm parm;
-	unsigned int min;
+	v4l2_std_id id;
 
 	if (ioctl (fd_capture_v4l, VIDIOC_QUERYCAP, &cap) < 0) {
 		if (EINVAL == errno) {
@@ -392,71 +389,17 @@ int v4l_capture_setup(void)
 		return TFAIL;
 	}
 
-	if (ioctl(fd_capture_v4l, VIDIOC_S_INPUT, &g_input) < 0) {
-		printf("VIDIOC_S_INPUT failed\n");
-		close(fd_capture_v4l);
-		return TFAIL;
-	}
-
-	memset(&cropcap, 0, sizeof(cropcap));
-	cropcap.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	if (ioctl (fd_capture_v4l, VIDIOC_CROPCAP, &cropcap) < 0) {
-		crop.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		crop.c = cropcap.defrect; /* reset to default */
-
-		if (ioctl (fd_capture_v4l, VIDIOC_S_CROP, &crop) < 0) {
-			switch (errno) {
-				case EINVAL:
-					/* Cropping not supported. */
-					fprintf (stderr, "%s  doesn't support crop\n",
-						v4l_capture_dev);
-					break;
-				default:
-					/* Errors ignored. */
-					break;
-			}
-		}
-	} else {
-		/* Errors ignored. */
-	}
-
-	parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	parm.parm.capture.timeperframe.numerator = 1;
-	parm.parm.capture.timeperframe.denominator = 0;
-	parm.parm.capture.capturemode = 0;
-	if (ioctl(fd_capture_v4l, VIDIOC_S_PARM, &parm) < 0) {
-		printf("VIDIOC_S_PARM failed\n");
-		close(fd_capture_v4l);
+	if (ioctl (fd_capture_v4l, VIDIOC_G_STD, &id) < 0) {
+		printf("VIDIOC_G_STD failed\n");
 		return TFAIL;
 	}
 
 	memset(&fmt, 0, sizeof(fmt));
-
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	fmt.fmt.pix.width = 0;
-	fmt.fmt.pix.height = 0;
 	fmt.fmt.pix.pixelformat = g_in_fmt;
-	fmt.fmt.pix.field = V4L2_FIELD_ANY;
 	if (ioctl (fd_capture_v4l, VIDIOC_S_FMT, &fmt) < 0) {
 		fprintf (stderr, "%s iformat not supported \n",
 			v4l_capture_dev);
-		return TFAIL;
-	}
-
-	/* Note VIDIOC_S_FMT may change width and height. */
-
-	/* Buggy driver paranoia. */
-	min = fmt.fmt.pix.width * 2;
-	if (fmt.fmt.pix.bytesperline < min)
-		fmt.fmt.pix.bytesperline = min;
-
-	min = fmt.fmt.pix.bytesperline * fmt.fmt.pix.height;
-	if (fmt.fmt.pix.sizeimage < min)
-		fmt.fmt.pix.sizeimage = min;
-
-	if (ioctl(fd_capture_v4l, VIDIOC_G_FMT, &fmt) < 0) {
-		printf("VIDIOC_G_FMT failed\n");
-		close(fd_capture_v4l);
 		return TFAIL;
 	}
 
