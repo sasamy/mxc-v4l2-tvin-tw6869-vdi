@@ -1,0 +1,18 @@
+TOOL_DIR =/home/b19715/share/L3.10.53_GA1.1.0/build-imx6qsabresd-X11/tmp/sysroots/x86_64-linux/usr/bin/cortexa9hf-vfp-neon-poky-linux-gnueabi
+CC=$(TOOL_DIR)/arm-poky-linux-gnueabi-gcc
+ROOTFS_INC_DIR = /home/b19715/share/L3.10.53_GA1.1.0/build-imx6qsabresd-X11/tmp/sysroots/imx6qsabresd/usr/include
+CFLAGS = -W -Wall -O2 -DLINUX -I$(ROOTFS_INC_DIR) 
+
+LIB_DIR = /home/b19715/share/L3.10.53_GA1.1.0/build-imx6qsabresd-X11/tmp/sysroots/imx6qsabresd/usr/lib
+LFLAGS += -Wl,-rpath-link,$(LIB_DIR) -Wl,-rpath-link,$(LIB_DIR)/arm-poky-linux-gnueabi -L $(LIB_DIR) -lg2d
+
+OBJS = mxc_v4l2_tvin.o
+
+TARGET = mxc_v4l2_tvin.out
+
+$(TARGET): $(OBJS)
+	$(CC) $(FLAGS) -o $(TARGET) $(OBJS)  $(LFLAGS)
+
+clean:
+	rm -f *.o *.out
+
