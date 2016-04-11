@@ -232,11 +232,15 @@ int start_capturing(void)
 
 		if (g_mem_type == V4L2_MEMORY_MMAP) {
 	                capture_buffers[i].length = buf.length;
-	                capture_buffers[i].offset = (size_t) buf.m.offset;
 	                capture_buffers[i].start = mmap(NULL, capture_buffers[i].length,
-	                    PROT_READ | PROT_WRITE, MAP_SHARED,
-	                    fd_capture_v4l, capture_buffers[i].offset);
+	                    PROT_READ | PROT_WRITE, MAP_SHARED, fd_capture_v4l, buf.m.offset);
 			memset(capture_buffers[i].start, 0xFF, capture_buffers[i].length);
+
+			if (ioctl(fd_capture_v4l, VIDIOC_QUERYBUF, &buf) < 0) {
+			    printf("VIDIOC_QUERYBUF for DMA address error\n");
+			    return TFAIL;
+			}
+			capture_buffers[i].offset = (size_t) buf.m.offset;
 		}
 	}
 
